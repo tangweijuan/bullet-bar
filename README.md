@@ -1,2 +1,3 @@
-# bulletlist-toolbar
-obsian插件，极简子弹清单工具
+# Bulletlist Toolbar
+
+An Obsidian plugin that adds a compact toolbar for quickly marking bullet list items with status and priority symbols.
