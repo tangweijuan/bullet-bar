@@ -1,6 +1,6 @@
 {
   "id": "bulletlist-toolbar",
-  "name": "子弹清单工具栏",
+  "name": "Bulletlist Toolbar",
   "version": "0.0.2",
   "minAppVersion": "0.12.0",
   "description": "为 Obsidian 子弹清单快速添加状态和优先级标记的工具栏。",
