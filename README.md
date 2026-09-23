@@ -1,3 +1,9 @@
-# Bulletlist Toolbar
+# 子弹清单工具栏
 
-An Obsidian plugin that adds a compact toolbar for quickly marking bullet list items with status and priority symbols.
+一个 Obsidian 插件，用于给子弹清单快速添加状态和优先级标记。
+
+## 功能
+
+- 为当前子弹清单项添加待办、进行中、完成、取消、延后状态
+- 一键切换高优先级标记
+- 在编辑模式中显示紧凑工具栏

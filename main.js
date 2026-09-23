@@ -14,7 +14,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     } catch (e) {}
 
     this.createToolbar();
-    this.addRibbonIcon('list-checks', 'Show Bulletlist Toolbar', () => {
+    this.addRibbonIcon('list-checks', '显示子弹清单工具栏', () => {
       this.settings.toolbarVisible = true;
       this.saveSettings();
       this.toolbar.classList.remove('hidden');
@@ -24,12 +24,12 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
 
     this.addCommand({
       id: 'bulletlist-toolbar-toggle',
-      name: 'Toggle Bulletlist Toolbar',
+      name: '切换子弹清单工具栏',
       callback: () => this.toggleToolbar()
     });
     this.addCommand({
       id: 'bulletlist-toolbar-show',
-      name: 'Show Bulletlist Toolbar',
+      name: '显示子弹清单工具栏',
       callback: () => {
         this.settings.toolbarVisible = true;
         this.saveSettings();
@@ -40,7 +40,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     });
     this.addCommand({
       id: 'bulletlist-toolbar-hide',
-      name: 'Hide Bulletlist Toolbar',
+      name: '隐藏子弹清单工具栏',
       callback: () => {
         this.settings.toolbarVisible = false;
         this.saveSettings();
@@ -49,12 +49,12 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
       }
     });
     [
-      ['mark-todo', 'Mark current line as Todo', '○'],
-      ['mark-in-progress', 'Mark current line as In Progress', '🔄'],
-      ['mark-done', 'Mark current line as Done', '✅'],
-      ['mark-canceled', 'Mark current line as Canceled', '❌'],
-      ['mark-deferred', 'Mark current line as Deferred', '➡️'],
-      ['toggle-high-priority', 'Toggle High Priority', '🔴']
+      ['mark-todo', '标记当前行为待办', '○'],
+      ['mark-in-progress', '标记当前行为进行中', '🔄'],
+      ['mark-done', '标记当前行为完成', '✅'],
+      ['mark-canceled', '标记当前行为取消', '❌'],
+      ['mark-deferred', '标记当前行为延后', '➡️'],
+      ['toggle-high-priority', '切换高优先级', '🔴']
     ].forEach(([id, name, sym]) => {
       this.addCommand({
         id: `bulletlist-toolbar-${id}`,
@@ -170,25 +170,25 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     const markdownView = this.getActiveMarkdownView();
     if (!markdownView) {
       this.toolbar.remove();
-      if (showNotice) new Notice('Bulletlist Toolbar: 请先打开一个 Markdown 笔记');
+      if (showNotice) new Notice('子弹清单工具栏：请先打开一个 Markdown 笔记');
       return false;
     }
 
     if (!this.isEditableMarkdownView(markdownView)) {
       this.toolbar.remove();
-      if (showNotice) new Notice('Bulletlist Toolbar: 请切换到编辑模式');
+      if (showNotice) new Notice('子弹清单工具栏：请切换到编辑模式');
       return false;
     }
 
     const host = this.findToolbarHost(markdownView);
     if (!host) {
-      if (showNotice) new Notice('Bulletlist Toolbar: 找不到可插入工具栏的位置');
+      if (showNotice) new Notice('子弹清单工具栏：找不到可插入工具栏的位置');
       return false;
     }
 
     if (this.hasToolbar(host)) {
       this.registerCursorSyncEvents(host);
-      if (showNotice) new Notice('Bulletlist Toolbar 已经显示');
+      if (showNotice) new Notice('子弹清单工具栏已经显示');
       return true;
     }
 
@@ -200,7 +200,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
       host.prepend(this.toolbar);
     }
     this.registerCursorSyncEvents(host);
-    if (showNotice) new Notice('Bulletlist Toolbar 已显示');
+    if (showNotice) new Notice('子弹清单工具栏已显示');
     return true;
   }
 
