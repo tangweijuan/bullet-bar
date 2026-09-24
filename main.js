@@ -1,9 +1,10 @@
-const { Plugin, MarkdownView, Notice, setIcon } = require('obsidian');
+﻿const { Plugin, MarkdownView, Notice, setIcon } = require('obsidian');
 
-const statusSyms = ['○', '🔄', '✅', '❌', '➡️'];
-const prioritySyms = ['🔴'];
+const STATUS_SYMBOLS = ['⚪️', '🐌', '🔄', '✅', '❌'];
+const PRIORITY_SYMBOLS = ['🔴'];
+const HIGH_PRIORITY_SYMBOL = '🔴';
 
-module.exports = class BulletlistToolbarPlugin extends Plugin {
+module.exports = class BulletbarPlugin extends Plugin {
   async onload() {
     this.settings = { toolbarVisible: true };
     try {
@@ -14,7 +15,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     } catch (e) {}
 
     this.createToolbar();
-    this.addRibbonIcon('list-checks', '显示子弹清单工具栏', () => {
+    this.addRibbonIcon('list-checks', 'Show Bulletbar', () => {
       this.settings.toolbarVisible = true;
       this.saveSettings();
       this.toolbar.classList.remove('hidden');
@@ -23,13 +24,13 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'bulletlist-toolbar-toggle',
-      name: '切换子弹清单工具栏',
+      id: 'bullet-bar-toggle',
+      name: 'Toggle Bulletbar',
       callback: () => this.toggleToolbar()
     });
     this.addCommand({
-      id: 'bulletlist-toolbar-show',
-      name: '显示子弹清单工具栏',
+      id: 'bullet-bar-show',
+      name: 'Show Bulletbar',
       callback: () => {
         this.settings.toolbarVisible = true;
         this.saveSettings();
@@ -39,8 +40,8 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
       }
     });
     this.addCommand({
-      id: 'bulletlist-toolbar-hide',
-      name: '隐藏子弹清单工具栏',
+      id: 'bullet-bar-hide',
+      name: 'Hide Bulletbar',
       callback: () => {
         this.settings.toolbarVisible = false;
         this.saveSettings();
@@ -49,15 +50,15 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
       }
     });
     [
-      ['mark-todo', '标记当前行为待办', '○'],
-      ['mark-in-progress', '标记当前行为进行中', '🔄'],
-      ['mark-done', '标记当前行为完成', '✅'],
-      ['mark-canceled', '标记当前行为取消', '❌'],
-      ['mark-deferred', '标记当前行为延后', '➡️'],
-      ['toggle-high-priority', '切换高优先级', '🔴']
+      ['mark-todo', 'Mark current line as Todo', '⚪️'],
+      ['mark-later', 'Mark current line as Later', '🐌'],
+      ['mark-doing', 'Mark current line as Doing', '🔄'],
+      ['mark-done', 'Mark current line as Done', '✅'],
+      ['mark-cancel', 'Mark current line as Cancel', '❌'],
+      ['toggle-high-priority', 'Toggle high priority', HIGH_PRIORITY_SYMBOL]
     ].forEach(([id, name, sym]) => {
       this.addCommand({
-        id: `bulletlist-toolbar-${id}`,
+        id: `bullet-bar-${id}`,
         name,
         editorCallback: () => this.insertSymbol(sym)
       });
@@ -89,15 +90,15 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
 
   createToolbar() {
     this.toolbar = document.createElement('div');
-    this.toolbar.className = 'bulletlist-toolbar';
+    this.toolbar.className = 'bullet-bar';
     if (!this.settings.toolbarVisible) {
       this.toolbar.classList.add('hidden');
     }
 
-    statusSyms.forEach((sym, index) => {
-      const titles = ['待办', '进行中', '完成', '取消', '延后'];
+    STATUS_SYMBOLS.forEach((sym, index) => {
+      const titles = ['Todo', 'Later', 'Doing', 'Done', 'Cancel'];
       const btn = document.createElement('button');
-      btn.className = 'bulletlist-toolbar-btn';
+      btn.className = 'bullet-bar-btn';
       btn.type = 'button';
       btn.setAttribute('data-sym', sym);
       btn.setAttribute('aria-label', titles[index]);
@@ -108,29 +109,29 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     });
 
     const sep = document.createElement('div');
-    sep.className = 'bulletlist-toolbar-sep';
+    sep.className = 'bullet-bar-sep';
     this.toolbar.appendChild(sep);
 
     const priorityBtn = document.createElement('button');
-    priorityBtn.className = 'bulletlist-toolbar-btn';
+    priorityBtn.className = 'bullet-bar-btn';
     priorityBtn.type = 'button';
-    priorityBtn.setAttribute('data-sym', '🔴');
-    priorityBtn.setAttribute('aria-label', '高优先');
-    priorityBtn.textContent = '🔴';
-    priorityBtn.title = '高优先';
-    priorityBtn.addEventListener('click', () => this.insertSymbol('🔴'));
+    priorityBtn.setAttribute('data-sym', HIGH_PRIORITY_SYMBOL);
+    priorityBtn.setAttribute('aria-label', 'High priority');
+    priorityBtn.textContent = HIGH_PRIORITY_SYMBOL;
+    priorityBtn.title = 'High priority';
+    priorityBtn.addEventListener('click', () => this.insertSymbol(HIGH_PRIORITY_SYMBOL));
     this.toolbar.appendChild(priorityBtn);
 
     this.toolbar.appendChild(this.createSeparator());
-    this.toolbar.appendChild(this.createIconButton('list-ordered', '有序列表', () => this.toggleList('ordered'), { listType: 'ordered' }));
-    this.toolbar.appendChild(this.createIconButton('list', '无序列表', () => this.toggleList('bullet'), { listType: 'bullet' }));
-    this.toolbar.appendChild(this.createIconButton('indent', '缩进', () => this.indentLines()));
-    this.toolbar.appendChild(this.createIconButton('outdent', '取消缩进', () => this.outdentLines()));
+    this.toolbar.appendChild(this.createIconButton('list-ordered', 'Ordered list', () => this.toggleList('ordered'), { listType: 'ordered' }));
+    this.toolbar.appendChild(this.createIconButton('list', 'Unordered list', () => this.toggleList('bullet'), { listType: 'bullet' }));
+    this.toolbar.appendChild(this.createIconButton('indent', 'Indent', () => this.indentLines()));
+    this.toolbar.appendChild(this.createIconButton('outdent', 'Outdent', () => this.outdentLines()));
 
     const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'bulletlist-toolbar-btn bulletlist-toolbar-btn-icon bulletlist-toolbar-toggle';
+    toggleBtn.className = 'bullet-bar-btn bullet-bar-btn-icon bullet-bar-toggle';
     toggleBtn.type = 'button';
-    toggleBtn.setAttribute('aria-label', '隐藏工具栏');
+    toggleBtn.setAttribute('aria-label', 'Hide toolbar');
     toggleBtn.addEventListener('click', () => this.toggleToolbar());
     this.toolbar.appendChild(toggleBtn);
     this.updateToggleButton();
@@ -138,13 +139,13 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
 
   createSeparator() {
     const sep = document.createElement('div');
-    sep.className = 'bulletlist-toolbar-sep';
+    sep.className = 'bullet-bar-sep';
     return sep;
   }
 
   createIconButton(icon, label, callback, options = {}) {
     const btn = document.createElement('button');
-    btn.className = 'bulletlist-toolbar-btn bulletlist-toolbar-btn-icon';
+    btn.className = 'bullet-bar-btn bullet-bar-btn-icon';
     btn.type = 'button';
     btn.title = label;
     btn.setAttribute('aria-label', label);
@@ -170,25 +171,25 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     const markdownView = this.getActiveMarkdownView();
     if (!markdownView) {
       this.toolbar.remove();
-      if (showNotice) new Notice('子弹清单工具栏：请先打开一个 Markdown 笔记');
+      if (showNotice) new Notice('Bulletbar: Open a Markdown note first');
       return false;
     }
 
     if (!this.isEditableMarkdownView(markdownView)) {
       this.toolbar.remove();
-      if (showNotice) new Notice('子弹清单工具栏：请切换到编辑模式');
+      if (showNotice) new Notice('Bulletbar: Switch to editing mode');
       return false;
     }
 
     const host = this.findToolbarHost(markdownView);
     if (!host) {
-      if (showNotice) new Notice('子弹清单工具栏：找不到可插入工具栏的位置');
+      if (showNotice) new Notice('Bulletbar: Could not find a toolbar position');
       return false;
     }
 
     if (this.hasToolbar(host)) {
       this.registerCursorSyncEvents(host);
-      if (showNotice) new Notice('子弹清单工具栏已经显示');
+      if (showNotice) new Notice('Bulletbar is already visible');
       return true;
     }
 
@@ -200,7 +201,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
       host.prepend(this.toolbar);
     }
     this.registerCursorSyncEvents(host);
-    if (showNotice) new Notice('子弹清单工具栏已显示');
+    if (showNotice) new Notice('Bulletbar is visible');
     return true;
   }
 
@@ -213,7 +214,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
   }
 
   hasToolbar(host) {
-    return Array.from(host.children).some(el => el.classList.contains('bulletlist-toolbar'));
+    return Array.from(host.children).some(el => el.classList.contains('bullet-bar'));
   }
 
   findDirectChild(host, classNames) {
@@ -276,12 +277,12 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
 
   updateToggleButton() {
     if (!this.toolbar) return;
-    const toggleBtn = this.toolbar.querySelector('.bulletlist-toolbar-toggle');
+    const toggleBtn = this.toolbar.querySelector('.bullet-bar-toggle');
     if (!toggleBtn) return;
     toggleBtn.textContent = '';
     setIcon(toggleBtn, this.settings.toolbarVisible ? 'x' : 'panel-top-open');
-    toggleBtn.setAttribute('aria-label', this.settings.toolbarVisible ? '隐藏工具栏' : '显示工具栏');
-    toggleBtn.title = this.settings.toolbarVisible ? '隐藏工具栏' : '显示工具栏';
+    toggleBtn.setAttribute('aria-label', this.settings.toolbarVisible ? 'Hide toolbar' : 'Show toolbar');
+    toggleBtn.title = this.settings.toolbarVisible ? 'Hide toolbar' : 'Show toolbar';
   }
 
   getActiveEditor() {
@@ -289,7 +290,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
   }
 
   symPrefixLen(s) {
-    const allSyms = ['🔄', '➡️', '🔴', '✅', '❌', '○'];
+    const allSyms = [...STATUS_SYMBOLS, ...PRIORITY_SYMBOLS];
     let i = 0;
     while (i < s.length) {
       if (s[i] === ' ') { i++; continue; }
@@ -305,23 +306,23 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
   syncToolbar() {
     const editor = this.getActiveEditor();
     if (!editor) {
-      document.querySelectorAll('.bulletlist-toolbar-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.bullet-bar-btn').forEach(b => b.classList.remove('active'));
       return;
     }
 
     const cursor = editor.getCursor();
     const line = editor.getLine(cursor.line);
     if (!line) {
-      document.querySelectorAll('.bulletlist-toolbar-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.bullet-bar-btn').forEach(b => b.classList.remove('active'));
       return;
     }
 
     const parsed = this.parseLine(line);
     const activeStatus = this.getLineStatus(parsed.content);
-    const hasHigh = this.hasPriority(parsed.content, '🔴');
+    const hasHigh = this.hasPriority(parsed.content, HIGH_PRIORITY_SYMBOL);
     const listType = this.getLineListType(line);
 
-    document.querySelectorAll('.bulletlist-toolbar-btn').forEach(btn => {
+    document.querySelectorAll('.bullet-bar-btn').forEach(btn => {
       const sym = btn.getAttribute('data-sym');
       const buttonListType = btn.getAttribute('data-list-type');
       if (buttonListType) {
@@ -332,7 +333,7 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
         btn.classList.remove('active');
         return;
       }
-      btn.classList.toggle('active', sym === activeStatus || (sym === '🔴' && hasHigh));
+      btn.classList.toggle('active', sym === activeStatus || (sym === HIGH_PRIORITY_SYMBOL && hasHigh));
     });
   }
 
@@ -457,17 +458,17 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
     const parsed = this.parseLine(line);
     let content = parsed.content.trimStart();
 
-    if (statusSyms.includes(sym)) {
-      const currentStatus = this.getLineStatus(content);
-      content = this.removeLeadingStatuses(content);
+    if (STATUS_SYMBOLS.includes(sym)) {
+      const markers = this.extractLeadingMarkers(content);
+      const nextStatus = markers.status === sym ? null : sym;
 
       if (parsed.checkbox) {
         parsed.checkbox = null;
         parsed.prefix = parsed.listPrefix;
       }
 
-      if (currentStatus !== sym) content = `${sym} ${content}`;
-    } else if (prioritySyms.includes(sym)) {
+      content = this.formatMarkerContent(nextStatus, markers.priority, markers.content);
+    } else if (PRIORITY_SYMBOLS.includes(sym)) {
       content = this.togglePriority(content, sym);
     }
 
@@ -502,41 +503,48 @@ module.exports = class BulletlistToolbarPlugin extends Plugin {
   }
 
   getLineStatus(content) {
-    return statusSyms.find(sym => content.trimStart().startsWith(sym)) || null;
-  }
-
-  removeLeadingStatuses(content) {
-    let result = content.trimStart();
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (let i = 0; i < statusSyms.length; i++) {
-        const sym = statusSyms[i];
-        if (result === sym || result.startsWith(sym + ' ')) {
-          result = result.slice(sym.length).trimStart();
-          changed = true;
-          break;
-        }
-      }
-    }
-    return result;
+    return this.extractLeadingMarkers(content).status;
   }
 
   hasPriority(content, sym) {
-    return content.split(/\s+/).includes(sym);
+    return this.extractLeadingMarkers(content).priority === sym;
   }
 
   togglePriority(content, sym) {
-    const leading = this.getLineStatus(content);
+    const markers = this.extractLeadingMarkers(content);
+    const nextPriority = markers.priority === sym ? null : sym;
+    return this.formatMarkerContent(markers.status, nextPriority, markers.content);
+  }
+
+  extractLeadingMarkers(content) {
     let rest = content.trimStart();
+    let status = null;
+    let priority = null;
+    let changed = true;
 
-    if (leading) rest = rest.slice(leading.length).trimStart();
-    const parts = rest.split(/\s+/).filter(Boolean);
-    const hasPriority = parts.includes(sym);
-    const nextParts = hasPriority ? parts.filter(part => part !== sym) : [sym, ...parts];
-    const nextContent = nextParts.join(' ');
+    while (changed) {
+      changed = false;
+      const nextStatus = STATUS_SYMBOLS.find(sym => rest === sym || rest.startsWith(sym + ' '));
+      if (nextStatus) {
+        status = nextStatus;
+        rest = rest.slice(nextStatus.length).trimStart();
+        changed = true;
+        continue;
+      }
 
-    return leading ? `${leading}${nextContent ? ' ' + nextContent : ''}` : nextContent;
+      const nextPriority = PRIORITY_SYMBOLS.find(sym => rest === sym || rest.startsWith(sym + ' '));
+      if (nextPriority) {
+        priority = nextPriority;
+        rest = rest.slice(nextPriority.length).trimStart();
+        changed = true;
+      }
+    }
+
+    return { status, priority, content: rest };
+  }
+
+  formatMarkerContent(status, priority, content) {
+    return [status, priority, content].filter(Boolean).join(' ');
   }
 
   contentPrefixLen(line) {
