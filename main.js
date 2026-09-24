@@ -1,8 +1,68 @@
-﻿const { Plugin, MarkdownView, Notice, setIcon } = require('obsidian');
+const { Plugin, MarkdownView, Notice, setIcon } = require('obsidian');
 
 const STATUS_SYMBOLS = ['⚪️', '🐌', '🔄', '✅', '❌'];
 const PRIORITY_SYMBOLS = ['🔴'];
 const HIGH_PRIORITY_SYMBOL = '🔴';
+const STATUS_LABEL_KEYS = ['todo', 'later', 'doing', 'done', 'cancel'];
+
+const STRINGS = {
+  en: {
+    showBulletbar: 'Show Bulletbar',
+    toggleBulletbar: 'Toggle Bulletbar',
+    hideBulletbar: 'Hide Bulletbar',
+    commandMarkTodo: 'Mark current line as Todo',
+    commandMarkLater: 'Mark current line as Later',
+    commandMarkDoing: 'Mark current line as Doing',
+    commandMarkDone: 'Mark current line as Done',
+    commandMarkCancel: 'Mark current line as Cancel',
+    commandToggleHighPriority: 'Toggle high priority',
+    todo: 'Todo',
+    later: 'Later',
+    doing: 'Doing',
+    done: 'Done',
+    cancel: 'Cancel',
+    highPriority: 'High priority',
+    orderedList: 'Ordered list',
+    unorderedList: 'Unordered list',
+    indent: 'Indent',
+    outdent: 'Outdent',
+    hideToolbar: 'Hide toolbar',
+    showToolbar: 'Show toolbar',
+    openMarkdownFirst: 'Bulletbar: Open a Markdown note first',
+    switchToEditingMode: 'Bulletbar: Switch to editing mode',
+    toolbarPositionMissing: 'Bulletbar: Could not find a toolbar position',
+    alreadyVisible: 'Bulletbar is already visible',
+    visible: 'Bulletbar is visible'
+  },
+  zh: {
+    showBulletbar: '显示 Bulletbar',
+    toggleBulletbar: '切换 Bulletbar',
+    hideBulletbar: '隐藏 Bulletbar',
+    commandMarkTodo: '标记当前行为待开始',
+    commandMarkLater: '标记当前行为推迟',
+    commandMarkDoing: '标记当前行为进行中',
+    commandMarkDone: '标记当前行为完成',
+    commandMarkCancel: '标记当前行为取消',
+    commandToggleHighPriority: '切换高优先级',
+    todo: '待开始',
+    later: '推迟',
+    doing: '进行中',
+    done: '完成',
+    cancel: '取消',
+    highPriority: '高优先级',
+    orderedList: '有序列表',
+    unorderedList: '无序列表',
+    indent: '缩进',
+    outdent: '减少缩进',
+    hideToolbar: '隐藏工具栏',
+    showToolbar: '显示工具栏',
+    openMarkdownFirst: 'Bulletbar：请先打开一个 Markdown 笔记',
+    switchToEditingMode: 'Bulletbar：请切换到编辑模式',
+    toolbarPositionMissing: 'Bulletbar：找不到可插入工具栏的位置',
+    alreadyVisible: 'Bulletbar 已经显示',
+    visible: 'Bulletbar 已显示'
+  }
+};
 
 module.exports = class BulletbarPlugin extends Plugin {
   async onload() {
@@ -15,7 +75,7 @@ module.exports = class BulletbarPlugin extends Plugin {
     } catch (e) {}
 
     this.createToolbar();
-    this.addRibbonIcon('list-checks', 'Show Bulletbar', () => {
+    this.addRibbonIcon('list-checks', this.t('showBulletbar'), () => {
       this.settings.toolbarVisible = true;
       this.saveSettings();
       this.toolbar.classList.remove('hidden');
@@ -24,13 +84,13 @@ module.exports = class BulletbarPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: 'bullet-bar-toggle',
-      name: 'Toggle Bulletbar',
+      id: 'toggle',
+      name: this.t('toggleBulletbar'),
       callback: () => this.toggleToolbar()
     });
     this.addCommand({
-      id: 'bullet-bar-show',
-      name: 'Show Bulletbar',
+      id: 'show',
+      name: this.t('showBulletbar'),
       callback: () => {
         this.settings.toolbarVisible = true;
         this.saveSettings();
@@ -40,8 +100,8 @@ module.exports = class BulletbarPlugin extends Plugin {
       }
     });
     this.addCommand({
-      id: 'bullet-bar-hide',
-      name: 'Hide Bulletbar',
+      id: 'hide',
+      name: this.t('hideBulletbar'),
       callback: () => {
         this.settings.toolbarVisible = false;
         this.saveSettings();
@@ -50,15 +110,15 @@ module.exports = class BulletbarPlugin extends Plugin {
       }
     });
     [
-      ['mark-todo', 'Mark current line as Todo', '⚪️'],
-      ['mark-later', 'Mark current line as Later', '🐌'],
-      ['mark-doing', 'Mark current line as Doing', '🔄'],
-      ['mark-done', 'Mark current line as Done', '✅'],
-      ['mark-cancel', 'Mark current line as Cancel', '❌'],
-      ['toggle-high-priority', 'Toggle high priority', HIGH_PRIORITY_SYMBOL]
+      ['mark-todo', this.t('commandMarkTodo'), '⚪️'],
+      ['mark-later', this.t('commandMarkLater'), '🐌'],
+      ['mark-doing', this.t('commandMarkDoing'), '🔄'],
+      ['mark-done', this.t('commandMarkDone'), '✅'],
+      ['mark-cancel', this.t('commandMarkCancel'), '❌'],
+      ['toggle-high-priority', this.t('commandToggleHighPriority'), HIGH_PRIORITY_SYMBOL]
     ].forEach(([id, name, sym]) => {
       this.addCommand({
-        id: `bullet-bar-${id}`,
+        id: id,
         name,
         editorCallback: () => this.insertSymbol(sym)
       });
@@ -74,6 +134,28 @@ module.exports = class BulletbarPlugin extends Plugin {
     [100, 500, 1000, 2000].forEach(delay => {
       setTimeout(() => this.injectToolbar(), delay);
     });
+  }
+
+  getLocale() {
+    const language = this.app && this.app.vault && typeof this.app.vault.getConfig === 'function'
+      ? this.app.vault.getConfig('language')
+      : null;
+    const documentLang = typeof document !== 'undefined' && document.documentElement
+      ? document.documentElement.getAttribute('lang')
+      : null;
+    const momentLang = typeof moment !== 'undefined' && moment && typeof moment.locale === 'function'
+      ? moment.locale()
+      : null;
+    const navigatorLang = typeof navigator !== 'undefined'
+      ? navigator.language
+      : null;
+    const lang = String(language || documentLang || momentLang || navigatorLang || 'en').toLowerCase();
+    return lang.startsWith('zh') ? 'zh' : 'en';
+  }
+
+  t(key) {
+    const locale = this.getLocale();
+    return (STRINGS[locale] && STRINGS[locale][key]) || STRINGS.en[key] || key;
   }
 
   async onunload() {
@@ -96,7 +178,7 @@ module.exports = class BulletbarPlugin extends Plugin {
     }
 
     STATUS_SYMBOLS.forEach((sym, index) => {
-      const titles = ['Todo', 'Later', 'Doing', 'Done', 'Cancel'];
+      const titles = STATUS_LABEL_KEYS.map(key => this.t(key));
       const btn = document.createElement('button');
       btn.className = 'bullet-bar-btn';
       btn.type = 'button';
@@ -116,22 +198,22 @@ module.exports = class BulletbarPlugin extends Plugin {
     priorityBtn.className = 'bullet-bar-btn';
     priorityBtn.type = 'button';
     priorityBtn.setAttribute('data-sym', HIGH_PRIORITY_SYMBOL);
-    priorityBtn.setAttribute('aria-label', 'High priority');
+    priorityBtn.setAttribute('aria-label', this.t('highPriority'));
     priorityBtn.textContent = HIGH_PRIORITY_SYMBOL;
-    priorityBtn.title = 'High priority';
+    priorityBtn.title = this.t('highPriority');
     priorityBtn.addEventListener('click', () => this.insertSymbol(HIGH_PRIORITY_SYMBOL));
     this.toolbar.appendChild(priorityBtn);
 
     this.toolbar.appendChild(this.createSeparator());
-    this.toolbar.appendChild(this.createIconButton('list-ordered', 'Ordered list', () => this.toggleList('ordered'), { listType: 'ordered' }));
-    this.toolbar.appendChild(this.createIconButton('list', 'Unordered list', () => this.toggleList('bullet'), { listType: 'bullet' }));
-    this.toolbar.appendChild(this.createIconButton('indent', 'Indent', () => this.indentLines()));
-    this.toolbar.appendChild(this.createIconButton('outdent', 'Outdent', () => this.outdentLines()));
+    this.toolbar.appendChild(this.createIconButton('list-ordered', this.t('orderedList'), () => this.toggleList('ordered'), { listType: 'ordered' }));
+    this.toolbar.appendChild(this.createIconButton('list', this.t('unorderedList'), () => this.toggleList('bullet'), { listType: 'bullet' }));
+    this.toolbar.appendChild(this.createIconButton('indent', this.t('indent'), () => this.indentLines()));
+    this.toolbar.appendChild(this.createIconButton('outdent', this.t('outdent'), () => this.outdentLines()));
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'bullet-bar-btn bullet-bar-btn-icon bullet-bar-toggle';
     toggleBtn.type = 'button';
-    toggleBtn.setAttribute('aria-label', 'Hide toolbar');
+    toggleBtn.setAttribute('aria-label', this.t('hideToolbar'));
     toggleBtn.addEventListener('click', () => this.toggleToolbar());
     this.toolbar.appendChild(toggleBtn);
     this.updateToggleButton();
@@ -171,25 +253,25 @@ module.exports = class BulletbarPlugin extends Plugin {
     const markdownView = this.getActiveMarkdownView();
     if (!markdownView) {
       this.toolbar.remove();
-      if (showNotice) new Notice('Bulletbar: Open a Markdown note first');
+      if (showNotice) new Notice(this.t('openMarkdownFirst'));
       return false;
     }
 
     if (!this.isEditableMarkdownView(markdownView)) {
       this.toolbar.remove();
-      if (showNotice) new Notice('Bulletbar: Switch to editing mode');
+      if (showNotice) new Notice(this.t('switchToEditingMode'));
       return false;
     }
 
     const host = this.findToolbarHost(markdownView);
     if (!host) {
-      if (showNotice) new Notice('Bulletbar: Could not find a toolbar position');
+      if (showNotice) new Notice(this.t('toolbarPositionMissing'));
       return false;
     }
 
     if (this.hasToolbar(host)) {
       this.registerCursorSyncEvents(host);
-      if (showNotice) new Notice('Bulletbar is already visible');
+      if (showNotice) new Notice(this.t('alreadyVisible'));
       return true;
     }
 
@@ -201,7 +283,7 @@ module.exports = class BulletbarPlugin extends Plugin {
       host.prepend(this.toolbar);
     }
     this.registerCursorSyncEvents(host);
-    if (showNotice) new Notice('Bulletbar is visible');
+    if (showNotice) new Notice(this.t('visible'));
     return true;
   }
 
@@ -281,8 +363,8 @@ module.exports = class BulletbarPlugin extends Plugin {
     if (!toggleBtn) return;
     toggleBtn.textContent = '';
     setIcon(toggleBtn, this.settings.toolbarVisible ? 'x' : 'panel-top-open');
-    toggleBtn.setAttribute('aria-label', this.settings.toolbarVisible ? 'Hide toolbar' : 'Show toolbar');
-    toggleBtn.title = this.settings.toolbarVisible ? 'Hide toolbar' : 'Show toolbar';
+    toggleBtn.setAttribute('aria-label', this.settings.toolbarVisible ? this.t('hideToolbar') : this.t('showToolbar'));
+    toggleBtn.title = this.settings.toolbarVisible ? this.t('hideToolbar') : this.t('showToolbar');
   }
 
   getActiveEditor() {

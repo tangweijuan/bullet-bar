@@ -1,22 +1,60 @@
 ﻿# Bulletbar
 
-Bulletbar is a compact toolbar for quickly adding task statuses, high-priority markers, list formatting, and indentation controls while editing Markdown lists.
+A minimalist toolbar for managing bullet list tasks, statuses, priorities, and hierarchy.
+
+Bulletbar is inspired by the Bullet Journal method. It provides a simple toolbar for quickly managing tasks while editing notes.
 
 ## Features
 
-- Switch a task between Todo, Later, Doing, Done, and Cancel.
-- Toggle High priority independently from the current task status.
-- Keep task markers ordered as `Status -> 🔴 -> content`.
-- Toggle ordered and unordered lists.
-- Indent and outdent list items.
-- Apply actions to multiple selected lines.
-- Sync the active toolbar button with the current line.
+* Change task status with one click
+* Mark tasks as high priority
+* Toggle ordered and unordered lists
+* Indent and outdent list items to create task hierarchies
+* Apply actions to multiple selected lines
+* Automatically sync the toolbar with the current line
+* Preserve the priority marker when changing task status
+
+## Symbols
+
+| Symbol | English       |
+| ------ | ------------- |
+| ⚪️     | Todo          |
+| 🐌     | Later         |
+| 🔄     | Doing         |
+| ✅      | Done          |
+| ❌      | Cancel        |
+| 🔴     | High priority |
+
+`⚪️`, `🐌`, `🔄`, `✅`, and `❌` are mutually exclusive statuses.
+
+`🔴` is an independent priority marker and can be combined with any status.
+
+The order is always:
+
+`Status → 🔴 → Task`
+
+Changing a task status preserves its priority marker.
+
+For example:
+
+```text
+⚪️ Finish portfolio
+    🔄 Edit homepage
+    ⚪️ Organize project details
+    🔄 🔴 Check interaction details
+🐌 Learn Figma plugin development
+    ⚪️ Read the documentation
+    ✅ Complete the exercise
+❌ Drop the old concept
+```
 
 ## Installation
 
-### Community Plugin
+### Community Plugins
 
-Settings -> Community plugins -> Browse -> Search for Bulletbar -> Install -> Enable
+1. Open **Settings → Community plugins → Browse**
+2. Search for **Bulletbar**
+3. Install and enable the plugin
 
 ### Manual Installation
 
@@ -26,34 +64,17 @@ Copy the plugin files into:
 <Vault>/.obsidian/plugins/bullet-bar/
 ```
 
-Then reload plugins and enable Bulletbar in Community plugins.
+Then enable **Bulletbar** under **Settings → Community plugins**.
 
 ## Usage
 
-Open a Markdown note in editing mode, place the cursor on a task line, then click a toolbar button or run a Bulletbar command from the command palette.
+Place the cursor on a list item and click a toolbar button to apply the corresponding action.
 
-Examples:
+Select multiple lines to apply supported actions to multiple items.
 
-```markdown
-- ⚪️ Plan the release
-- 🐌 Revisit icon polish
-- 🔄 🔴 Update the docs
-- ✅ Ship the package
-- ❌ Drop the old marker
-```
+Use the indent and outdent buttons to create and adjust task hierarchies.
 
-`⚪️`, `🐌`, `🔄`, `✅`, and `❌` are mutually exclusive statuses. `🔴` is an independent high-priority marker and can be combined with any status.
-
-## Symbols
-
-| Symbol | English | 中文 |
-| --- | --- | --- |
-| `⚪️` | Todo | 待开始 |
-| `🐌` | Later | 推迟 |
-| `🔄` | Doing | 进行中 |
-| `✅` | Done | 完成 |
-| `❌` | Cancel | 取消 |
-| `🔴` | High priority | 高优先级 |
+Move the cursor to a task, and the toolbar automatically shows its current status and priority.
 
 ## License
 
@@ -61,25 +82,63 @@ MIT
 
 ---
 
-# Bulletbar 中文说明
+# Bulletbar
 
-Bulletbar 是一个紧凑的 Markdown 列表工具栏，用于快速添加任务状态、高优先级标记、列表格式和缩进控制。
+一个用于管理任务状态、优先级和列表层级的极简工具栏。
+
+Bulletbar 的设计灵感来自 Bullet Journal。它提供一个简单的工具栏，让你在编辑笔记时快速管理任务。
 
 ## 功能
 
-- 在待开始、推迟、进行中、完成、取消之间切换任务状态。
-- 独立切换高优先级标记。
-- 始终保持任务排列为 `状态 -> 🔴 -> 内容`。
-- 切换有序列表和无序列表。
-- 增加缩进和减少缩进。
-- 支持多行选择操作。
-- 根据当前行同步工具栏按钮激活状态。
+* 一键切换任务状态
+* 标记高优先级任务
+* 切换有序列表和无序列表
+* 缩进和减少缩进，用于建立任务与子任务的层级关系
+* 支持多行选择和批量操作
+* 根据当前行自动同步工具栏状态
+* 切换任务状态时保留高优先级标记
 
-## 安装方式
+## 符号
+
+| 符号 | 中文   |
+| -- | ---- |
+| ⚪️ | 待开始  |
+| 🐌 | 推迟   |
+| 🔄 | 进行中  |
+| ✅  | 完成   |
+| ❌  | 取消   |
+| 🔴 | 高优先级 |
+
+`⚪️`、`🐌`、`🔄`、`✅`、`❌` 为互斥状态。
+
+`🔴` 是独立的高优先级标记，可以与任意状态组合。
+
+固定顺序：
+
+`状态 → 🔴 → 任务内容`
+
+切换任务状态时，高优先级标记会保留。
+
+例如：
+
+```text
+⚪️ 完成作品集
+    🔄 修改首页
+    ⚪️ 整理项目说明
+    🔄 🔴 检查交互细节
+🐌 学习 Figma 插件开发
+    ⚪️ 阅读文档
+    ✅ 完成练习
+❌ 放弃旧方案
+```
+
+## 安装
 
 ### 社区插件
 
-设置 → 社区插件 → 浏览 → 搜索 Bulletbar → 安装 → 启用
+1. 打开 **设置 → 社区插件 → 浏览**
+2. 搜索 **Bulletbar**
+3. 安装并启用插件
 
 ### 手动安装
 
@@ -89,34 +148,17 @@ Bulletbar 是一个紧凑的 Markdown 列表工具栏，用于快速添加任务
 <Vault>/.obsidian/plugins/bullet-bar/
 ```
 
-然后重新加载插件，并在社区插件中启用 Bulletbar。
+然后在 **设置 → 社区插件** 中启用 **Bulletbar**。
 
-## 使用方法
+## 使用
 
-在 Markdown 编辑模式中打开笔记，将光标放在任务行上，然后点击工具栏按钮，或从命令面板运行 Bulletbar 命令。
+将光标放在列表项中，点击工具栏中的按钮即可执行对应操作。
 
-示例：
+选择多行内容，可以对多个列表项执行支持的操作。
 
-```markdown
-- ⚪️ 规划发布
-- 🐌 稍后优化图标
-- 🔄 🔴 更新文档
-- ✅ 打包发布
-- ❌ 移除旧标记
-```
+使用缩进和减少缩进按钮，可以建立和调整任务与子任务的层级关系。
 
-`⚪️`、`🐌`、`🔄`、`✅`、`❌` 是互斥状态。`🔴` 是独立的高优先级标记，可以和任意状态组合。
-
-## 符号说明
-
-| 符号 | English | 中文 |
-| --- | --- | --- |
-| `⚪️` | Todo | 待开始 |
-| `🐌` | Later | 推迟 |
-| `🔄` | Doing | 进行中 |
-| `✅` | Done | 完成 |
-| `❌` | Cancel | 取消 |
-| `🔴` | High priority | 高优先级 |
+将光标移动到不同任务上，工具栏会自动显示该任务当前的状态和优先级。
 
 ## License
 
