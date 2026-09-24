@@ -1,4 +1,4 @@
-﻿# Bulletbar
+# Bulletbar
 
 A minimalist toolbar for managing bullet list tasks, statuses, priorities, and hierarchy.
 
@@ -61,7 +61,7 @@ For example:
 Copy the plugin files into:
 
 ```text
-<Vault>/.obsidian/plugins/bullet-bar/
+<Vault>/.obsidian/plugins/bulletlist-toolbar/
 ```
 
 Then enable **Bulletbar** under **Settings → Community plugins**.
@@ -145,7 +145,7 @@ Bulletbar 的设计灵感来自 Bullet Journal。它提供一个简单的工具�
 将插件文件复制到：
 
 ```text
-<Vault>/.obsidian/plugins/bullet-bar/
+<Vault>/.obsidian/plugins/bulletlist-toolbar/
 ```
 
 然后在 **设置 → 社区插件** 中启用 **Bulletbar**。
