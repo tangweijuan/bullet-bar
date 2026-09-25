@@ -1,4 +1,4 @@
-const { Plugin, MarkdownView, Notice, setIcon } = require('obsidian');
+const { Plugin, MarkdownView, Notice, Platform, setIcon } = require('obsidian');
 
 const STATUS_SYMBOLS = ['⚪️', '🐌', '🔄', '✅', '❌'];
 const PRIORITY_SYMBOLS = ['🔴'];
@@ -74,66 +74,80 @@ module.exports = class BulletbarPlugin extends Plugin {
       }
     } catch (e) {}
 
-    this.createToolbar();
-    this.addRibbonIcon('list-checks', this.t('showBulletbar'), () => {
-      this.settings.toolbarVisible = true;
-      this.saveSettings();
-      this.toolbar.classList.remove('hidden');
-      this.updateToggleButton();
-      this.injectToolbar(true);
-    });
+    const isMobile = this.isMobileEnvironment();
 
-    this.addCommand({
-      id: 'toggle',
-      name: this.t('toggleBulletbar'),
-      callback: () => this.toggleToolbar()
-    });
-    this.addCommand({
-      id: 'show',
-      name: this.t('showBulletbar'),
-      callback: () => {
+    if (isMobile) {
+      this.createMobileToolbar();
+      this.registerMobileToolbarEvents();
+    } else {
+      this.createToolbar();
+      this.addRibbonIcon('list-checks', this.t('showBulletbar'), () => {
         this.settings.toolbarVisible = true;
         this.saveSettings();
         this.toolbar.classList.remove('hidden');
         this.updateToggleButton();
         this.injectToolbar(true);
-      }
-    });
-    this.addCommand({
-      id: 'hide',
-      name: this.t('hideBulletbar'),
-      callback: () => {
-        this.settings.toolbarVisible = false;
-        this.saveSettings();
-        this.toolbar.classList.add('hidden');
-        this.updateToggleButton();
-      }
-    });
+      });
+
+      this.addCommand({
+        id: 'toggle',
+        name: this.t('toggleBulletbar'),
+        callback: () => this.toggleToolbar()
+      });
+      this.addCommand({
+        id: 'show',
+        name: this.t('showBulletbar'),
+        callback: () => {
+          this.settings.toolbarVisible = true;
+          this.saveSettings();
+          this.toolbar.classList.remove('hidden');
+          this.updateToggleButton();
+          this.injectToolbar(true);
+        }
+      });
+      this.addCommand({
+        id: 'hide',
+        name: this.t('hideBulletbar'),
+        callback: () => {
+          this.settings.toolbarVisible = false;
+          this.saveSettings();
+          this.toolbar.classList.add('hidden');
+          this.updateToggleButton();
+        }
+      });
+    }
+
     [
-      ['mark-todo', this.t('commandMarkTodo'), '⚪️'],
-      ['mark-later', this.t('commandMarkLater'), '🐌'],
-      ['mark-doing', this.t('commandMarkDoing'), '🔄'],
-      ['mark-done', this.t('commandMarkDone'), '✅'],
-      ['mark-cancel', this.t('commandMarkCancel'), '❌'],
+      ['mark-todo', this.t('commandMarkTodo'), STATUS_SYMBOLS[0]],
+      ['mark-later', this.t('commandMarkLater'), STATUS_SYMBOLS[1]],
+      ['mark-doing', this.t('commandMarkDoing'), STATUS_SYMBOLS[2]],
+      ['mark-done', this.t('commandMarkDone'), STATUS_SYMBOLS[3]],
+      ['mark-cancel', this.t('commandMarkCancel'), STATUS_SYMBOLS[4]],
       ['toggle-high-priority', this.t('commandToggleHighPriority'), HIGH_PRIORITY_SYMBOL]
-    ].forEach(([id, name, sym]) => {
+    ].forEach(([id, name, symbol]) => {
       this.addCommand({
         id: id,
         name,
-        editorCallback: () => this.insertSymbol(sym)
+        editorCallback: () => this.insertSymbol(symbol)
       });
     });
 
-    this.registerEvent(this.app.workspace.on('editor-change', () => this.syncToolbar()));
-    this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.handleLeafChange()));
-    this.registerEvent(this.app.workspace.on('layout-change', () => this.scheduleInjectToolbar()));
-    this.registerEvent(this.app.workspace.on('file-open', () => this.scheduleInjectToolbar()));
-    this.registerDomEvent(document, 'selectionchange', () => this.scheduleSyncToolbar());
+    if (!isMobile) {
+      this.registerEvent(this.app.workspace.on('editor-change', () => this.syncToolbar()));
+      this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.handleLeafChange()));
+      this.registerEvent(this.app.workspace.on('layout-change', () => this.scheduleInjectToolbar()));
+      this.registerEvent(this.app.workspace.on('file-open', () => this.scheduleInjectToolbar()));
+      this.registerDomEvent(document, 'selectionchange', () => this.scheduleSyncToolbar());
 
-    this.app.workspace.onLayoutReady(() => this.scheduleInjectToolbar());
-    [100, 500, 1000, 2000].forEach(delay => {
-      setTimeout(() => this.injectToolbar(), delay);
-    });
+      this.app.workspace.onLayoutReady(() => this.scheduleInjectToolbar());
+      [100, 500, 1000, 2000].forEach(delay => {
+        setTimeout(() => this.injectToolbar(), delay);
+      });
+    }
+  }
+
+  isMobileEnvironment() {
+    return !!(Platform && (Platform.isMobile || Platform.isMobileApp || Platform.isPhone || Platform.isTablet));
   }
 
   getLocale() {
@@ -162,6 +176,10 @@ module.exports = class BulletbarPlugin extends Plugin {
     if (this.toolbar) {
       this.toolbar.remove();
     }
+    if (this.mobileToolbar) {
+      this.mobileToolbar.remove();
+    }
+    this.restoreMobileEditorPadding();
   }
 
   async saveSettings() {
@@ -217,6 +235,91 @@ module.exports = class BulletbarPlugin extends Plugin {
     toggleBtn.addEventListener('click', () => this.toggleToolbar());
     this.toolbar.appendChild(toggleBtn);
     this.updateToggleButton();
+  }
+
+  createMobileToolbar() {
+    this.mobileToolbar = document.createElement('div');
+    this.mobileToolbar.className = 'bullet-bar-mobile';
+    this.mobileToolbar.setAttribute('role', 'toolbar');
+    this.mobileToolbar.setAttribute('aria-label', 'Bulletbar');
+
+    STATUS_SYMBOLS.forEach((symbol, index) => {
+      this.createMobileSymbolButton(symbol, this.t(STATUS_LABEL_KEYS[index]));
+    });
+    this.createMobileSymbolButton(HIGH_PRIORITY_SYMBOL, this.t('highPriority'));
+  }
+
+  createMobileSymbolButton(symbol, label) {
+    const button = document.createElement('button');
+    button.className = 'bullet-bar-mobile-btn';
+    button.type = 'button';
+    button.textContent = symbol;
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.setAttribute('data-sym', symbol);
+    button.addEventListener('click', () => this.insertSymbol(symbol));
+    this.mobileToolbar.appendChild(button);
+  }
+
+  registerMobileToolbarEvents() {
+    this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.updateMobileToolbar()));
+    this.registerEvent(this.app.workspace.on('file-open', () => this.updateMobileToolbar()));
+    this.registerEvent(this.app.workspace.on('layout-change', () => this.updateMobileToolbar()));
+    this.registerEvent(this.app.workspace.on('editor-change', () => this.syncToolbar()));
+    this.registerDomEvent(document, 'selectionchange', () => this.scheduleSyncToolbar());
+    this.registerDomEvent(window, 'resize', () => this.updateMobileToolbar());
+    this.registerDomEvent(window, 'orientationchange', () => this.updateMobileToolbar());
+
+    if (window.visualViewport) {
+      this.registerDomEvent(window.visualViewport, 'resize', () => this.updateMobileToolbar());
+      this.registerDomEvent(window.visualViewport, 'scroll', () => this.updateMobileToolbar());
+    }
+
+    this.app.workspace.onLayoutReady(() => this.updateMobileToolbar());
+    this.updateMobileToolbar();
+  }
+
+  updateMobileToolbar() {
+    if (!this.mobileToolbar) return;
+    const markdownView = this.getActiveMarkdownView();
+    const host = markdownView && this.findToolbarHost(markdownView);
+    if (!host || !this.isEditableMarkdownView(markdownView)) {
+      this.mobileToolbar.remove();
+      this.restoreMobileEditorPadding();
+      return;
+    }
+
+    if (this.mobileToolbar.parentElement !== host) {
+      host.appendChild(this.mobileToolbar);
+    }
+
+    const viewport = window.visualViewport;
+    const keyboardInset = viewport
+      ? Math.max(0, window.innerHeight - (viewport.offsetTop + viewport.height))
+      : 0;
+    this.mobileToolbar.style.setProperty('--bullet-bar-mobile-keyboard-inset', `${keyboardInset}px`);
+
+    const editor = this.getEditorFromMarkdownView(markdownView);
+    const editorScroller = editor && editor.getScrollerElement
+      ? editor.getScrollerElement()
+      : host.querySelector('.cm-scroller');
+    this.setMobileEditorPadding(editorScroller);
+    this.syncToolbar();
+  }
+
+  setMobileEditorPadding(editorScroller) {
+    if (!editorScroller) return;
+    if (this.mobileEditorScroller && this.mobileEditorScroller !== editorScroller) {
+      this.restoreMobileEditorPadding();
+    }
+    this.mobileEditorScroller = editorScroller;
+    editorScroller.classList.add('bullet-bar-mobile-editor');
+  }
+
+  restoreMobileEditorPadding() {
+    if (!this.mobileEditorScroller) return;
+    this.mobileEditorScroller.classList.remove('bullet-bar-mobile-editor');
+    this.mobileEditorScroller = null;
   }
 
   createSeparator() {
@@ -388,14 +491,14 @@ module.exports = class BulletbarPlugin extends Plugin {
   syncToolbar() {
     const editor = this.getActiveEditor();
     if (!editor) {
-      document.querySelectorAll('.bullet-bar-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.bullet-bar-btn, .bullet-bar-mobile-btn').forEach(b => b.classList.remove('active'));
       return;
     }
 
     const cursor = editor.getCursor();
     const line = editor.getLine(cursor.line);
     if (!line) {
-      document.querySelectorAll('.bullet-bar-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.bullet-bar-btn, .bullet-bar-mobile-btn').forEach(b => b.classList.remove('active'));
       return;
     }
 
@@ -404,7 +507,7 @@ module.exports = class BulletbarPlugin extends Plugin {
     const hasHigh = this.hasPriority(parsed.content, HIGH_PRIORITY_SYMBOL);
     const listType = this.getLineListType(line);
 
-    document.querySelectorAll('.bullet-bar-btn').forEach(btn => {
+    document.querySelectorAll('.bullet-bar-btn, .bullet-bar-mobile-btn').forEach(btn => {
       const sym = btn.getAttribute('data-sym');
       const buttonListType = btn.getAttribute('data-list-type');
       if (buttonListType) {
