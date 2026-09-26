@@ -270,11 +270,6 @@ module.exports = class BulletbarPlugin extends Plugin {
     this.registerDomEvent(window, 'resize', () => this.updateMobileToolbar());
     this.registerDomEvent(window, 'orientationchange', () => this.updateMobileToolbar());
 
-    if (window.visualViewport) {
-      this.registerDomEvent(window.visualViewport, 'resize', () => this.updateMobileToolbar());
-      this.registerDomEvent(window.visualViewport, 'scroll', () => this.updateMobileToolbar());
-    }
-
     this.app.workspace.onLayoutReady(() => this.updateMobileToolbar());
     this.updateMobileToolbar();
   }
@@ -293,11 +288,8 @@ module.exports = class BulletbarPlugin extends Plugin {
       host.appendChild(this.mobileToolbar);
     }
 
-    const viewport = window.visualViewport;
-    const keyboardInset = viewport
-      ? Math.max(0, window.innerHeight - (viewport.offsetTop + viewport.height))
-      : 0;
-    this.mobileToolbar.style.setProperty('--bullet-bar-mobile-keyboard-inset', `${keyboardInset}px`);
+    const hostTop = Math.max(0, host.getBoundingClientRect().top);
+    this.mobileToolbar.style.setProperty('--bullet-bar-mobile-top', `${hostTop}px`);
 
     const editor = this.getEditorFromMarkdownView(markdownView);
     const editorScroller = editor && editor.getScrollerElement
@@ -314,11 +306,16 @@ module.exports = class BulletbarPlugin extends Plugin {
     }
     this.mobileEditorScroller = editorScroller;
     editorScroller.classList.add('bullet-bar-mobile-editor');
+    const toolbarHeight = this.mobileToolbar.getBoundingClientRect().height;
+    const gap = 8;
+    const padding = toolbarHeight + gap;
+    editorScroller.style.setProperty('--bullet-bar-mobile-editor-padding', `${padding}px`);
   }
 
   restoreMobileEditorPadding() {
     if (!this.mobileEditorScroller) return;
     this.mobileEditorScroller.classList.remove('bullet-bar-mobile-editor');
+    this.mobileEditorScroller.style.removeProperty('--bullet-bar-mobile-editor-padding');
     this.mobileEditorScroller = null;
   }
 

@@ -60,7 +60,7 @@
   position: fixed;
   left: max(8px, env(safe-area-inset-left));
   right: max(8px, env(safe-area-inset-right));
-  bottom: calc(48px + var(--bullet-bar-mobile-keyboard-inset, 0px) + env(safe-area-inset-bottom));
+  top: max(var(--bullet-bar-mobile-top, 0px), env(safe-area-inset-top));
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -94,6 +94,6 @@
 }
 
 .bullet-bar-mobile-editor {
-  padding-bottom: 96px;
-  scroll-padding-bottom: 96px;
+  padding-top: var(--bullet-bar-mobile-editor-padding);
+  scroll-padding-top: var(--bullet-bar-mobile-editor-padding);
 }
