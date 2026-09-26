@@ -78,6 +78,11 @@ module.exports = class BulletbarPlugin extends Plugin {
 
     if (isMobile) {
       this.createMobileToolbar();
+      this.addCommand({
+        id: 'toggle-mobile',
+        name: this.t('toggleBulletbar'),
+        callback: () => this.toggleMobileToolbar()
+      });
       this.registerMobileToolbarEvents();
     } else {
       this.createToolbar();
@@ -179,7 +184,6 @@ module.exports = class BulletbarPlugin extends Plugin {
     if (this.mobileToolbar) {
       this.mobileToolbar.remove();
     }
-    this.restoreMobileEditorPadding();
   }
 
   async saveSettings() {
@@ -240,6 +244,12 @@ module.exports = class BulletbarPlugin extends Plugin {
   createMobileToolbar() {
     this.mobileToolbar = document.createElement('div');
     this.mobileToolbar.className = 'bullet-bar-mobile';
+    if (this.isTabletEnvironment()) {
+      this.mobileToolbar.classList.add('bullet-bar-mobile-tablet');
+    }
+    if (!this.settings.toolbarVisible) {
+      this.mobileToolbar.classList.add('hidden');
+    }
     this.mobileToolbar.setAttribute('role', 'toolbar');
     this.mobileToolbar.setAttribute('aria-label', 'Bulletbar');
 
@@ -253,12 +263,25 @@ module.exports = class BulletbarPlugin extends Plugin {
     const button = document.createElement('button');
     button.className = 'bullet-bar-mobile-btn';
     button.type = 'button';
-    button.textContent = symbol;
+    const symbolElement = document.createElement('span');
+    symbolElement.className = 'bullet-bar-mobile-symbol';
+    symbolElement.textContent = symbol;
+    button.appendChild(symbolElement);
+    if (this.isTabletEnvironment()) {
+      const labelElement = document.createElement('span');
+      labelElement.className = 'bullet-bar-mobile-label';
+      labelElement.textContent = label;
+      button.appendChild(labelElement);
+    }
     button.title = label;
     button.setAttribute('aria-label', label);
     button.setAttribute('data-sym', symbol);
     button.addEventListener('click', () => this.insertSymbol(symbol));
     this.mobileToolbar.appendChild(button);
+  }
+
+  isTabletEnvironment() {
+    return !!(Platform && Platform.isTablet);
   }
 
   registerMobileToolbarEvents() {
@@ -277,46 +300,24 @@ module.exports = class BulletbarPlugin extends Plugin {
   updateMobileToolbar() {
     if (!this.mobileToolbar) return;
     const markdownView = this.getActiveMarkdownView();
-    const host = markdownView && this.findToolbarHost(markdownView);
+    const host = markdownView && this.findToolbarHost(markdownView, true);
     if (!host || !this.isEditableMarkdownView(markdownView)) {
       this.mobileToolbar.remove();
-      this.restoreMobileEditorPadding();
       return;
     }
 
     if (this.mobileToolbar.parentElement !== host) {
-      host.appendChild(this.mobileToolbar);
+      host.prepend(this.mobileToolbar);
     }
 
-    const hostTop = Math.max(0, host.getBoundingClientRect().top);
-    this.mobileToolbar.style.setProperty('--bullet-bar-mobile-top', `${hostTop}px`);
-
-    const editor = this.getEditorFromMarkdownView(markdownView);
-    const editorScroller = editor && editor.getScrollerElement
-      ? editor.getScrollerElement()
-      : host.querySelector('.cm-scroller');
-    this.setMobileEditorPadding(editorScroller);
     this.syncToolbar();
   }
 
-  setMobileEditorPadding(editorScroller) {
-    if (!editorScroller) return;
-    if (this.mobileEditorScroller && this.mobileEditorScroller !== editorScroller) {
-      this.restoreMobileEditorPadding();
-    }
-    this.mobileEditorScroller = editorScroller;
-    editorScroller.classList.add('bullet-bar-mobile-editor');
-    const toolbarHeight = this.mobileToolbar.getBoundingClientRect().height;
-    const gap = 8;
-    const padding = toolbarHeight + gap;
-    editorScroller.style.setProperty('--bullet-bar-mobile-editor-padding', `${padding}px`);
-  }
-
-  restoreMobileEditorPadding() {
-    if (!this.mobileEditorScroller) return;
-    this.mobileEditorScroller.classList.remove('bullet-bar-mobile-editor');
-    this.mobileEditorScroller.style.removeProperty('--bullet-bar-mobile-editor-padding');
-    this.mobileEditorScroller = null;
+  toggleMobileToolbar() {
+    if (!this.mobileToolbar) return;
+    this.settings.toolbarVisible = !this.settings.toolbarVisible;
+    this.mobileToolbar.classList.toggle('hidden', !this.settings.toolbarVisible);
+    this.saveSettings();
   }
 
   createSeparator() {
@@ -403,15 +404,19 @@ module.exports = class BulletbarPlugin extends Plugin {
     return Array.from(host.children).find(el => classNames.some(className => el.classList.contains(className))) || null;
   }
 
-  findToolbarHost(markdownView) {
+  findToolbarHost(markdownView, preferSourceView = false) {
     const activeLeaf = this.app.workspace.activeLeaf;
     const activeContainer = activeLeaf && activeLeaf.view && activeLeaf.view.containerEl;
+    const sourceViewCandidates = [
+      markdownView.containerEl && markdownView.containerEl.querySelector('.markdown-source-view'),
+      activeContainer && activeContainer.querySelector('.markdown-source-view')
+    ];
     const candidates = [
+      ...(preferSourceView ? sourceViewCandidates : []),
       markdownView.containerEl && markdownView.containerEl.querySelector('.view-content'),
       activeContainer && activeContainer.querySelector('.view-content'),
       markdownView.contentEl,
-      markdownView.containerEl && markdownView.containerEl.querySelector('.markdown-source-view'),
-      activeContainer && activeContainer.querySelector('.markdown-source-view'),
+      ...(!preferSourceView ? sourceViewCandidates : []),
       activeContainer,
       markdownView.containerEl
     ];

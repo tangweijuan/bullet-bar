@@ -57,20 +57,30 @@
 }
 
 .bullet-bar-mobile {
-  position: fixed;
-  left: max(8px, env(safe-area-inset-left));
-  right: max(8px, env(safe-area-inset-right));
-  top: max(var(--bullet-bar-mobile-top, 0px), env(safe-area-inset-top));
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-around;
   gap: 4px;
+  width: 100%;
   min-height: 42px;
   padding: 4px 6px;
+  box-sizing: border-box;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
-  z-index: 1001;
+  flex: 0 0 auto;
+}
+
+.bullet-bar-mobile.hidden {
+  display: none;
+}
+
+/* iPhone keeps the view header floating above the scrolling editor. */
+.is-phone .bullet-bar-mobile {
+  position: sticky;
+  top: calc(var(--view-header-height, 0px) + var(--safe-area-inset-top, env(safe-area-inset-top)));
+  z-index: 1;
 }
 
 .bullet-bar-mobile-btn {
@@ -93,7 +103,17 @@
   background: var(--interactive-accent);
 }
 
-.bullet-bar-mobile-editor {
-  padding-top: var(--bullet-bar-mobile-editor-padding);
-  scroll-padding-top: var(--bullet-bar-mobile-editor-padding);
+.bullet-bar-mobile-tablet .bullet-bar-mobile-btn {
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  padding: 0 8px;
+  gap: 6px;
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.bullet-bar-mobile-label {
+  font-size: var(--font-ui-small);
+  line-height: 1;
 }
