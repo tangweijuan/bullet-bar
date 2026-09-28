@@ -310,6 +310,7 @@ module.exports = class BulletbarPlugin extends Plugin {
       host.prepend(this.mobileToolbar);
     }
 
+    this.registerCursorSyncEvents(host);
     this.syncToolbar();
   }
 
@@ -394,6 +395,52 @@ module.exports = class BulletbarPlugin extends Plugin {
     ['mouseup', 'keyup', 'touchend', 'focusin'].forEach(eventName => {
       this.registerDomEvent(host, eventName, () => this.scheduleSyncToolbar());
     });
+    this.registerDomEvent(host, 'keydown', event => {
+      if (
+        event.key === 'Enter' &&
+        !event.shiftKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        this.handleEnterKey();
+      }
+    }, true);
+  }
+
+  handleEnterKey() {
+    const editor = this.getActiveEditor();
+    if (!editor) return;
+
+    const cursor = editor.getCursor();
+    const line = editor.getLine(cursor.line) || '';
+    const parsed = this.parseLine(line);
+    const markers = this.extractLeadingMarkers(parsed.content);
+
+    if (!markers.status) return;
+
+    setTimeout(() => {
+      const newCursor = editor.getCursor();
+      if (newCursor.line <= cursor.line) return;
+
+      const newLine = editor.getLine(newCursor.line) || '';
+      const newParsed = this.parseLine(newLine);
+      if (this.getLineStatus(newParsed.content)) return;
+      if (newParsed.content.trim()) return;
+
+      const finalLine = this.formatLine(
+        newParsed,
+        this.formatMarkerContent(STATUS_SYMBOLS[0], null, '')
+      );
+
+      editor.replaceRange(
+        finalLine,
+        { line: newCursor.line, ch: 0 },
+        { line: newCursor.line, ch: newLine.length }
+      );
+      editor.setCursor({ line: newCursor.line, ch: this.contentPrefixLen(finalLine) });
+      this.syncToolbar();
+    }, 0);
   }
 
   hasToolbar(host) {
@@ -532,14 +579,13 @@ module.exports = class BulletbarPlugin extends Plugin {
     const range = this.getTargetLineRange(editor);
 
     for (let lineNo = range.to; lineNo >= range.from; lineNo--) {
-      const line = editor.getLine(lineNo);
-      if (!line || !line.trim()) continue;
+      const line = editor.getLine(lineNo) || '';
       const newLine = this.applySymbolToLine(line, sym);
       editor.replaceRange(newLine, { line: lineNo, ch: 0 }, { line: lineNo, ch: line.length });
     }
 
     if (range.from === range.to) {
-      const newLine = editor.getLine(cursor.line);
+      const newLine = editor.getLine(cursor.line) || '';
       editor.setCursor({ line: cursor.line, ch: this.contentPrefixLen(newLine) });
     }
     editor.focus();
@@ -591,11 +637,23 @@ module.exports = class BulletbarPlugin extends Plugin {
   }
 
   indentLines() {
-    this.shiftLines(line => `  ${line}`);
+    const indentUnit = this.getIndentUnit();
+    this.shiftLines(line => `${indentUnit}${line}`);
   }
 
   outdentLines() {
-    this.shiftLines(line => line.replace(/^(?: {1,2}|\t)/, ''));
+    const indentUnit = this.getIndentUnit();
+    const spaces = ' '.repeat(indentUnit.length);
+    const outdentPattern = new RegExp(`^(?:\\t| {1,${spaces.length}})`);
+    this.shiftLines(line => line.replace(outdentPattern, ''));
+  }
+
+  getIndentUnit() {
+    const tabSize = this.app && this.app.vault && typeof this.app.vault.getConfig === 'function'
+      ? Number(this.app.vault.getConfig('tabSize'))
+      : 0;
+    const size = Number.isFinite(tabSize) && tabSize > 0 ? Math.floor(tabSize) : 4;
+    return ' '.repeat(size);
   }
 
   shiftLines(transform) {
@@ -648,14 +706,17 @@ module.exports = class BulletbarPlugin extends Plugin {
     if (STATUS_SYMBOLS.includes(sym)) {
       const markers = this.extractLeadingMarkers(content);
       const nextStatus = markers.status === sym ? null : sym;
+      const nextPriority = nextStatus ? markers.priority : null;
 
       if (parsed.checkbox) {
         parsed.checkbox = null;
         parsed.prefix = parsed.listPrefix;
       }
 
-      content = this.formatMarkerContent(nextStatus, markers.priority, markers.content);
+      content = this.formatMarkerContent(nextStatus, nextPriority, markers.content);
     } else if (PRIORITY_SYMBOLS.includes(sym)) {
+      const markers = this.extractLeadingMarkers(content);
+      if (!markers.status) return line;
       content = this.togglePriority(content, sym);
     }
 
@@ -731,7 +792,9 @@ module.exports = class BulletbarPlugin extends Plugin {
   }
 
   formatMarkerContent(status, priority, content) {
-    return [status, priority, content].filter(Boolean).join(' ');
+    const markers = [status, priority].filter(Boolean);
+    if (!content) return markers.length ? markers.join(' ') + ' ' : '';
+    return [...markers, content].filter(Boolean).join(' ');
   }
 
   contentPrefixLen(line) {
